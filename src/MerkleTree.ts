@@ -91,7 +91,7 @@ export class MerkleTree {
         // 3. Add neighboring nodes to the proof
         // 4. Repeat until we got to the root
 
-        const layeredProof = [];
+        const proofLayers = [];
 
         let currentLayerIndices = leafIndices;
         for (let currentLayer of this.layeredTree) {
@@ -102,18 +102,31 @@ export class MerkleTree {
                 return !currentLayerIndices.includes(siblingIndex);
             });
 
+            // Getting parent node indices for current layer and removing duplicates if there are any
+            const parentIndices = [...new Set(currentLayerIndices.map(getParentIndex))];
             // We need to filter out the node that doesn't have a sibling
-            const parentIndices = filteredSiblings.map(getParentIndex);
             const currentLayerProofHashes = filteredSiblings
                 .map(index => {
-                    return  currentLayer[index];
+                    return currentLayer[index];
                 })
                 .filter(proofHash => !!proofHash)
 
-            layeredProof.push(currentLayerProofHashes);
+            if (false) {
+                console.log('=======LAYER START============');
+                console.log('Current layer:', currentLayer);
+                console.log('Siblings:', siblingIndices);
+                console.log('Filtered siblings:', filteredSiblings);
+                console.log('Proof hashes', currentLayerProofHashes);
+                console.log('=======LAYER END==============');
+            }
+
+            proofLayers.push(currentLayerProofHashes);
             currentLayerIndices = parentIndices;
         }
 
-        return new MerkleProof(Array.prototype.concat(...layeredProof), this.hashFunction);
+        if (false) {
+            console.log('Hashes', Array.prototype.concat(...proofLayers));
+        }
+        return new MerkleProof(Array.prototype.concat(...proofLayers), this.hashFunction);
     }
 }

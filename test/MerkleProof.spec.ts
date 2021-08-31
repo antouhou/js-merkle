@@ -30,83 +30,60 @@ class MerkleProofTestCase {
 
 }
 
-const testCases = [
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [0],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [1],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [2],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [4],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [0, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [0, 1],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [1, 2],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [2, 3],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [3, 4],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [4, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [0, 1, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [2, 3, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [2, 4, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [2, 4, 5],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
-    ),
-];
+const caseVariants = {
+    TREE_TYPES: {
+        BALANCED: 'balanced',
+        UNBALANCED: 'unbalanced'
+    },
+}
+
+function createCombinations(arr: number[]) {
+    function fn(active: number[], rest: number[], a: number[][]) {
+        if (!active.length && !rest.length)
+            return a;
+        if (!rest.length) {
+            a.push(active);
+        } else {
+            fn([...active, rest[0]], rest.slice(1), a);
+            fn(active, rest.slice(1), a);
+        }
+        return a;
+    }
+
+    // Initial call
+    return fn([], arr, []);
+
+}
+
+const balancedItems = ['a', 'b', 'c', 'd', 'e', 'f'];
+const balancedItemsTreeRootHex = '1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2';
+const unbalancedItems = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+const balancedCombinatons = createCombinations([0,1,2,3,4,5]);
+console.log('Total combinations:', balancedCombinatons?.length);
+const unbalancedCombinatons = createCombinations([0,1,2,3,4,5,6]);
+console.log('Total combinations:', unbalancedCombinatons?.length);
+
+function createTestCases() {
+    let balancedTestCases = balancedCombinatons.map((combination) => {
+        return new MerkleProofTestCase(
+            ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+            combination,
+            Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+        );
+    });
+    let unbalancedTestCases: MerkleProofTestCase[] = unbalancedCombinatons.map((combination) => {
+        return new MerkleProofTestCase(
+            ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((x) => sha256(Buffer.from(x))),
+            combination,
+            Buffer.from('e2a80e0e872a6c6eaed37b4c1f220e1935004805585b5f99617e48e9c8fe4034', 'hex')
+        );
+    });;
+
+    return [...balancedTestCases, ...unbalancedTestCases]
+}
+
+const testCases = createTestCases();
 
 describe("MerkleProof", () => {
     let leafValues: string[];
@@ -147,6 +124,13 @@ describe("MerkleProof", () => {
                     const leafHashesToProve = testCase.leafHashesToProve;
 
                     const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+                    if (leafIndicesToProve[0] === 1 && leafIndicesToProve[1] === 3 && leafIndicesToProve.length === 2) {
+                        console.log('LOOK HERE!');
+                        // Only 0 and 2 are present. This is correct, however we also need hash at index 1 from the top layer
+                        console.log(merkleProof.getProofHashes());
+                    }
+
                     const treeDepth = merkleTree.getTreeDepth();
 
                     const root = merkleProof.getRoot(leafIndicesToProve, leafHashesToProve, treeDepth);

@@ -28,18 +28,37 @@ export class MerkleProof {
      * @return {Uint8Array}
      */
     getRoot(leafIndices: number[], leafHashes: Uint8Array[], treeDepth: number): Uint8Array {
-        let currentLayerIndices = leafIndices;
+        // Indices needs to be sorted so the logic with the unbalanced layer would work, for
+        // the details look at notPreRootLayer and logic below it.
+        let currentLayerIndices = leafIndices.slice().sort();
         let currentLayerNodes = leafHashes;
 
         let proofHashesRemaining = this.proofHashes.slice();
 
-        for (let i = 0; i < treeDepth; i++) {
+        // Tree depth is the amount of layers we should have on top of the leaf layer
+        for (let layerNumber = 0; layerNumber < treeDepth; layerNumber++) {
             const nextLayerNodes: Uint8Array[] = [];
             const nextLayerIndices: number[] = [];
 
             const currentLayerSiblingIndices = currentLayerIndices.map(getSiblingIndex);
             // Figuring out what are the indices of the nodes in the current layer
-            const proofNodesIndices = currentLayerSiblingIndices.filter(siblingIndex => !currentLayerIndices.includes(siblingIndex));
+            let proofNodesIndices = currentLayerSiblingIndices
+                .filter(siblingIndex => !currentLayerIndices.includes(siblingIndex));
+
+            // If there are only two hashes left and we haven't reached root level just yet,
+            // that means that the hash that's left belongs to the top level, and we need to
+            // propagate the highest index
+            const notPreRootLayerYet = treeDepth - layerNumber > 1;
+            const onlyOneHashLeftInTheProof = proofHashesRemaining.length === 1;
+            const onlyOneHashAtTheCurrentLayer = currentLayerNodes.length === 1;
+            const skipProofHash = notPreRootLayerYet && onlyOneHashLeftInTheProof && onlyOneHashAtTheCurrentLayer;
+
+            // TODO: this is for the balanced tree, for an unbalanced tree works a bit differently
+            if (skipProofHash) {
+                // TODO: probably can just set it up to [], slicing by that point is kind of pointless
+                proofNodesIndices = proofNodesIndices.slice(0, -1);
+            }
+
             const proofNodesCount = proofNodesIndices.length;
             // Getting n elements from the beginning of the remaining proof hashes
             const proofNodesOnCurrentLayer = proofHashesRemaining.slice(0, proofNodesCount);

@@ -112,6 +112,25 @@ describe("MerkleTree", () => {
 
             expect(hexLayers).to.be.deep.equal(expectedProofHashes);
         });
+
+        it ('should get correct proof leaves 1 and 3', () => {
+            const expectedProofHashes = [
+                'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
+                '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+                '04fa33f8b4bd3db545fa04cdd51b462509f611797c7bfe5c944ee2bb3b2ed908'
+            ];
+
+            const leafIndicesToProve = [1, 3];
+
+            const merkleTree = new MerkleTree(leafHashes, sha256);
+            const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+            const hexLayers = merkleProof
+                .getProofHashes()
+                .map(node => Buffer.from(node).toString('hex'));
+
+            expect(hexLayers).to.be.deep.equal(expectedProofHashes);
+        });
     });
 
     describe('#getTreeDepth', () => {
