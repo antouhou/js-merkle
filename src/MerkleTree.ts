@@ -1,9 +1,9 @@
 import { MerkleProof } from "./MerkleProof";
-import { isLeftIndex, getSiblingIndex, getParentIndex } from "./utils/indices";
+import { getSiblingIndex, getParentIndex } from "./utils/indices";
 
 export class MerkleTree {
     private readonly layeredTree: Uint8Array[][];
-    hashFunction: (i: Uint8Array) => Uint8Array;
+    private readonly hashFunction: (i: Uint8Array) => Uint8Array;
 
     /**
      * Creates layered tree from the leaf hashes
@@ -71,16 +71,21 @@ export class MerkleTree {
         return this.layeredTree[this.layeredTree.length - 1][0];
     }
 
+    /**
+     * Returns tree depth. Tree depth is needed for the proof verification
+     *
+     * @return {number}
+     */
     getTreeDepth(): number {
-        return this.layeredTree.length;
+        return this.layeredTree.length - 1;
     }
     /**
-     *  Returns layered multi proof
+     *  Returns merkle proof for the given leaf indices
      *
-     * @param {number[]} indices
-     * @return {Uint8Array[][]}
+     * @param {number[]} leafIndices
+     * @return {MerkleProof}
      */
-    getProof(indices: number[]): MerkleProof {
+    getProof(leafIndices: number[]): MerkleProof {
         // 1. Get neighboring nodes to the ones we're trying to prove
         // 2. Figure out if we already have them among indices
         // 3. Add neighboring nodes to the proof
@@ -88,7 +93,7 @@ export class MerkleTree {
 
         const layeredProof = [];
 
-        let currentLayerIndices = indices;
+        let currentLayerIndices = leafIndices;
         for (let currentLayer of this.layeredTree) {
             let siblingIndices = currentLayerIndices.map(getSiblingIndex);
 
@@ -105,16 +110,10 @@ export class MerkleTree {
                 })
                 .filter(proofHash => !!proofHash)
 
-            if (currentLayerProofHashes.length > 0) {
-                layeredProof.push(currentLayerProofHashes);
-                currentLayerIndices = parentIndices;
-            } else {
-                // We have all necessary hashes to reconstruct the root in there's no indices left to prove
-                // for the current layer
-                break;
-            }
+            layeredProof.push(currentLayerProofHashes);
+            currentLayerIndices = parentIndices;
         }
 
-        return new MerkleProof(layeredProof, this.hashFunction);
+        return new MerkleProof(Array.prototype.concat(...layeredProof), this.hashFunction);
     }
 }
