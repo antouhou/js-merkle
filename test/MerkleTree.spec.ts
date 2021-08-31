@@ -11,12 +11,58 @@ function sha256(data: Uint8Array): Uint8Array {
 
 // TODO: Test cases:
 // Balanced/unbalanced
-// 1 element
-// 2 elements no sibling
-// 2 elements siblings
-// 3 elements 2 siblings and 1 not
+// 1 element:
+//  - First branch: left, and right
+//  - Middle branch: left and right
+//  - Last branch: left and right
+// 2 elements:
+//  - First and last branch, no siblings
+//  - First branch, siblings
+// 3 elements:
+//  - 2 siblings from the first branch and 1 element from the last
+//  - 3 elements from the first, middle and last branches
 // All elements
 // Tree has one element
+
+function createHashesForBalancedTree() {
+    return ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x)));
+}
+
+class MerkleTreeTestCase {
+    constructor(hashes: Buffer[]) {
+    }
+}
+
+class MerkleProofTestCase {
+    leafHashes: Uint8Array[];
+    leafIndicesToProve: number[];
+    leafHashesToProve: Uint8Array[];
+    expectedRoot: Uint8Array;
+    title: string;
+
+    constructor(leafHashes: Uint8Array[], leafIndicesToProve: number[], expectedRoot: Uint8Array) {
+        const titlePrefix = 'should get a correct root'
+
+        this.leafHashes = leafHashes;
+        this.leafIndicesToProve = leafIndicesToProve;
+        this.leafHashesToProve = this.leafIndicesToProve.map((index) => this.leafHashes[index]);
+
+        this.expectedRoot = expectedRoot;
+
+        const isBalancedTree = leafHashes.length % 2 === 0;
+        this.title = `${titlePrefix} from a ${isBalancedTree ? 'balanced' : 'unbalanced'} tree for ${leafIndicesToProve.length} elements`;
+
+    }
+
+}
+
+const testCases = [
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [0],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2')
+    ),
+];
 
 describe("MerkleTree", () => {
     let leafValues: string[];

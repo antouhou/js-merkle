@@ -9,6 +9,105 @@ function sha256(data: Uint8Array): Uint8Array {
         .digest();
 }
 
+class MerkleProofTestCase {
+    leafHashes: Uint8Array[];
+    leafIndicesToProve: number[];
+    leafHashesToProve: Uint8Array[];
+    expectedRoot: Uint8Array;
+    title: string;
+
+    constructor(leafHashes: Uint8Array[], leafIndicesToProve: number[], expectedRoot: Uint8Array) {
+        this.leafHashes = leafHashes;
+        this.leafIndicesToProve = leafIndicesToProve;
+        this.leafHashesToProve = this.leafIndicesToProve.map((index) => this.leafHashes[index]);
+
+        this.expectedRoot = expectedRoot;
+
+        const isBalancedTree = leafHashes.length % 2 === 0;
+        this.title = `from a ${isBalancedTree ? 'balanced' : 'unbalanced'} tree for ${leafIndicesToProve.length} elements at positions ${leafIndicesToProve}`;
+
+    }
+
+}
+
+const testCases = [
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [0],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [1],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [2],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [4],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [0, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [0, 1],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [1, 2],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [2, 3],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [3, 4],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [4, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [0, 1, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [2, 3, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [2, 4, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+    new MerkleProofTestCase(
+        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
+        [2, 4, 5],
+        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2', 'hex')
+    ),
+];
+
 describe("MerkleProof", () => {
     let leafValues: string[];
     let leafHashes: Uint8Array[];
@@ -38,6 +137,23 @@ describe("MerkleProof", () => {
                 .toString('hex');
 
             expect(hexRoot).to.be.equal(expectedRootHex);
+        });
+        describe('should get a correct root', () => {
+            testCases.forEach(testCase => {
+                it(testCase.title, () => {
+                    const merkleTree = new MerkleTree(testCase.leafHashes, sha256);
+
+                    const leafIndicesToProve = testCase.leafIndicesToProve;
+                    const leafHashesToProve = testCase.leafHashesToProve;
+
+                    const merkleProof = merkleTree.getProof(leafIndicesToProve);
+                    const treeDepth = merkleTree.getTreeDepth();
+
+                    const root = merkleProof.getRoot(leafIndicesToProve, leafHashesToProve, treeDepth);
+
+                    expect(Buffer.from(root).toString('hex')).to.be.equal(Buffer.from(testCase.expectedRoot).toString('hex'));
+                });
+            });
         })
     });
 
