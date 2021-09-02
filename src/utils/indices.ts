@@ -29,31 +29,30 @@ export function maxLeavesCountAtDepth(depth: number): number {
 }
 
 export function getUnevenLayers(treeLeavesCount: number): { leavesCount: number, layerIndex: number }[] {
-    let layerElements = treeLeavesCount;
-    const unevenLayers = [];
+    let leavesCountOnTheLayer = treeLeavesCount;
     const depth = getTreeDepthFromLeavesCount(treeLeavesCount);
 
+    const unevenLayers = [];
+
     for (let i = 0; i < depth; i++) {
-        const unevenLayer = layerElements % 2 !== 0;
+        const unevenLayer = leavesCountOnTheLayer % 2 !== 0;
         if (unevenLayer) {
-            unevenLayers.push({ leavesCount: layerElements, layerIndex: i });
+            unevenLayers.push({ leavesCount: leavesCountOnTheLayer, layerIndex: i });
         }
 
-        layerElements = Math.ceil(layerElements / 2);
+        leavesCountOnTheLayer = Math.ceil(leavesCountOnTheLayer / 2);
     }
 
     return unevenLayers;
 }
 
 export function getProofIndices(sortedLeafIndices: number[], leavesCount: number): number[][] {
-    // layer, indices
     const depth = getTreeDepthFromLeavesCount(leavesCount);
     const unevenLayers = getUnevenLayers(leavesCount);
     const proofIndices: number[][] = [];
-
     let currentLayerIndices = sortedLeafIndices.slice();
-    for (let layerNumber = 0; layerNumber < depth; layerNumber++) {
 
+    for (let layerIndex = 0; layerIndex < depth; layerIndex++) {
         const currentLayerSiblingIndices = currentLayerIndices.map(getSiblingIndex);
         // Figuring out indices that are already siblings and do not require additional hash
         // to calculate the parent
@@ -61,7 +60,7 @@ export function getProofIndices(sortedLeafIndices: number[], leavesCount: number
             .filter(siblingIndex => !currentLayerIndices.includes(siblingIndex));
 
         // The last node of that layer doesn't have another hash to the right, so doesn't
-        const unevenLayer = unevenLayers.find(layer => { return layer.layerIndex === layerNumber });
+        const unevenLayer = unevenLayers.find(layer => { return layer.layerIndex === layerIndex });
         if (unevenLayer && currentLayerIndices.includes(unevenLayer.leavesCount - 1)) {
             proofNodesIndices = proofNodesIndices.slice(0, -1);
         }

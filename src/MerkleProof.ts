@@ -34,10 +34,8 @@ export class MerkleProof {
         // Tree depth is the amount of layers we should have on top of the leaf layer
         for (let layerIndex = 0; layerIndex < proofTuplesByLayers.length; layerIndex++) {
             // Sorted by their position in the tree, so we can take pairs correctly
-            const allNodesTuples = [
-                ...proofTuplesByLayers[layerIndex],
-                ...leafTuples
-            ].sort((a, b) => a[0] - b[0]);
+            const allNodesTuples = [...proofTuplesByLayers[layerIndex], ...leafTuples]
+                .sort((a, b) => a[0] - b[0]);
 
             const parentIndices = getParentIndices(leafTuples.map(tuple => tuple[0]));
             leafTuples = parentIndices.map((parentNodeTreeIndex, i) => {
