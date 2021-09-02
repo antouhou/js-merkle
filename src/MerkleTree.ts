@@ -1,5 +1,5 @@
 import { MerkleProof } from "./MerkleProof";
-import { getSiblingIndex, getParentIndex } from "./utils/indices";
+import { getSiblingIndex, getParentIndices } from "./utils/indices";
 
 export class MerkleTree {
     private readonly layeredTree: Uint8Array[][];
@@ -14,42 +14,36 @@ export class MerkleTree {
     private createTree(leafHashes: Uint8Array[]): Uint8Array[][] {
         // The bottom level is the leaf hashes itself
         const tree = [leafHashes];
-        let nextLayer = [];
+        let parentLayer = [];
         let currentLayer = leafHashes;
 
         while (currentLayer.length !== 1) {
             // Ceil, so we also iterate over the last element that doesn't have sibling, if there's one
-            const nextLayerNodesCount = Math.ceil(currentLayer.length / 2);
+            const parentNodesCount = Math.ceil(currentLayer.length / 2);
 
-            // Filling the next layer with values
-            for (let i = 0; i < nextLayerNodesCount; i++) {
-                // For 0, it should be 0 and 1
-                // For 1, it should be 2 and 3
-                // For 2, it should be 4 and 2
-                const leftNodeIndex = i * 2;
-                const rightNodeIndex = leftNodeIndex + 1;
-
-                const leftNode = currentLayer[leftNodeIndex];
-                const rightNode = currentLayer[rightNodeIndex];
+            // Filling the parent layer with values
+            for (let parentNodeIndex = 0; parentNodeIndex < parentNodesCount; parentNodeIndex++) {
+                const leftChild = currentLayer[parentNodeIndex * 2];
+                const rightChild = currentLayer[parentNodeIndex * 2 + 1];
 
                 let nextNodeHash;
-                if (rightNode) {
-                    const concatenatedBuffer = new Uint8Array([...leftNode, ...rightNode]);
+                if (rightChild) {
+                    const concatenatedBuffer = new Uint8Array([...leftChild, ...rightChild]);
                     nextNodeHash = this.hashFunction(concatenatedBuffer);
                 } else {
-                    nextNodeHash = leftNode;
+                    nextNodeHash = leftChild;
                 }
 
-                nextLayer.push(nextNodeHash);
+                parentLayer.push(nextNodeHash);
             }
 
             // Adding this layer to the tree
-            tree.push(nextLayer);
+            tree.push(parentLayer);
             // Setting the next layer
-            currentLayer = nextLayer;
+            currentLayer = parentLayer;
 
             // Preparing the space for the next layer
-            nextLayer = [];
+            parentLayer = [];
         }
 
         return tree;
@@ -76,7 +70,7 @@ export class MerkleTree {
      *
      * @return {number}
      */
-    getTreeDepth(): number {
+    getDepth(): number {
         return this.layeredTree.length - 1;
     }
     /**
@@ -94,7 +88,7 @@ export class MerkleTree {
         const proofLayers = [];
 
         let currentLayerIndices = leafIndices;
-        for (let currentLayer of this.layeredTree) {
+        for (let treeLayer of this.layeredTree) {
             let siblingIndices = currentLayerIndices.map(getSiblingIndex);
 
             // Filtering siblings that are amongst the requested indices already
@@ -102,31 +96,20 @@ export class MerkleTree {
                 return !currentLayerIndices.includes(siblingIndex);
             });
 
-            // Getting parent node indices for current layer and removing duplicates if there are any
-            const parentIndices = [...new Set(currentLayerIndices.map(getParentIndex))];
-            // We need to filter out the node that doesn't have a sibling
+            const parentIndices = getParentIndices(currentLayerIndices);
+            // We need to filter out nodes that do not have a sibling
             const currentLayerProofHashes = filteredSiblings
-                .map(index => {
-                    return currentLayer[index];
-                })
+                .map(index =>  treeLayer[index])
                 .filter(proofHash => !!proofHash)
-
-            if (false) {
-                console.log('=======LAYER START============');
-                console.log('Current layer:', currentLayer);
-                console.log('Siblings:', siblingIndices);
-                console.log('Filtered siblings:', filteredSiblings);
-                console.log('Proof hashes', currentLayerProofHashes);
-                console.log('=======LAYER END==============');
-            }
 
             proofLayers.push(currentLayerProofHashes);
             currentLayerIndices = parentIndices;
         }
 
-        if (false) {
-            console.log('Hashes', Array.prototype.concat(...proofLayers));
-        }
         return new MerkleProof(Array.prototype.concat(...proofLayers), this.hashFunction);
+    }
+
+    getLayers() {
+        return this.layeredTree;
     }
 }

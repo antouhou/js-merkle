@@ -9,30 +9,6 @@ function sha256(data: Uint8Array): Uint8Array {
         .digest();
 }
 
-// TODO: Test cases:
-// Balanced/unbalanced
-// 1 element:
-//  - First branch: left, and right
-//  - Middle branch: left and right
-//  - Last branch: left and right
-// 2 elements:
-//  - First and last branch, no siblings
-//  - First branch, siblings
-// 3 elements:
-//  - 2 siblings from the first branch and 1 element from the last
-//  - 3 elements from the first, middle and last branches
-// All elements
-// Tree has one element
-
-function createHashesForBalancedTree() {
-    return ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x)));
-}
-
-class MerkleTreeTestCase {
-    constructor(hashes: Buffer[]) {
-    }
-}
-
 class MerkleProofTestCase {
     leafHashes: Uint8Array[];
     leafIndicesToProve: number[];
@@ -55,14 +31,6 @@ class MerkleProofTestCase {
     }
 
 }
-
-const testCases = [
-    new MerkleProofTestCase(
-        ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => sha256(Buffer.from(x))),
-        [0],
-        Buffer.from('1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2')
-    ),
-];
 
 describe("MerkleTree", () => {
     let leafValues: string[];
@@ -138,7 +106,7 @@ describe("MerkleTree", () => {
             // 6 leaves - 3 layers deep tree. Tree depth generally can be figure out
             const merkleTree = new MerkleTree(leafHashes, sha256);
 
-            expect(merkleTree.getTreeDepth()).to.be.equal(3);
+            expect(merkleTree.getDepth()).to.be.equal(3);
         });
     });
 });
