@@ -1,115 +1,95 @@
-import { MerkleProof } from "./MerkleProof";
-import { getSiblingIndex, getParentIndices } from "./utils/indices";
+import MerkleProof from './MerkleProof';
+import { getSiblingIndex, getParentIndices, getTreeDepth } from './utils/indices';
+import concatAndHash from './utils/concatenateAndHash';
+import { range } from './utils/array';
 
-export class MerkleTree {
-    private readonly layeredTree: Uint8Array[][];
-    private readonly hashFunction: (i: Uint8Array) => Uint8Array;
+interface ProofAccumulator {
+  currentLayerIndices: number[],
+  proofHashes: Uint8Array[]
+}
 
-    /**
-     * Creates layered tree from the leaf hashes
-     *
-     * @param {Uint8Array[]} leafHashes
-     * @return {Uint8Array[][]}
-     */
-    private createTree(leafHashes: Uint8Array[]): Uint8Array[][] {
-        // The bottom level is the leaf hashes itself
-        const tree = [leafHashes];
-        let parentLayer = [];
-        let currentLayer = leafHashes;
+export default class MerkleTree {
+  private readonly layers: Uint8Array[][];
 
-        while (currentLayer.length !== 1) {
-            // Ceil, so we also iterate over the last element that doesn't have sibling, if there's one
-            const parentNodesCount = Math.ceil(currentLayer.length / 2);
+  private readonly hashFunction: (i: Uint8Array) => Uint8Array;
 
-            // Filling the parent layer with values
-            for (let parentNodeIndex = 0; parentNodeIndex < parentNodesCount; parentNodeIndex++) {
-                const leftChild = currentLayer[parentNodeIndex * 2];
-                const rightChild = currentLayer[parentNodeIndex * 2 + 1];
+  private calculateParentLayer(nodes: Uint8Array[]): Uint8Array[] {
+    const parentLayerNodesCount = Math.ceil(nodes.length / 2);
+    return range(0, parentLayerNodesCount)
+      .map((i) => concatAndHash(nodes[i * 2], nodes[i * 2 + 1], this.hashFunction));
+  }
 
-                let nextNodeHash;
-                if (rightChild) {
-                    const concatenatedBuffer = new Uint8Array([...leftChild, ...rightChild]);
-                    nextNodeHash = this.hashFunction(concatenatedBuffer);
-                } else {
-                    nextNodeHash = leftChild;
-                }
+  /**
+   * Creates layered tree from the leaf hashes
+   *
+   * @param {Uint8Array[]} leafHashes
+   * @return {Uint8Array[][]}
+   */
+  private createTree(leafHashes: Uint8Array[]): Uint8Array[][] {
+    return range(0, getTreeDepth(leafHashes.length))
+      .reduce((tree, layerIndex) => [
+        ...tree, this.calculateParentLayer(tree[layerIndex]),
+      ], [leafHashes]);
+  }
 
-                parentLayer.push(nextNodeHash);
-            }
+  /**
+   *
+   * @param {Uint8Array[]} leafHashes
+   * @param {function(data: Uint8Array): Uint8Array} hashFunction
+   */
+  constructor(leafHashes: Uint8Array[], hashFunction: (i: Uint8Array) => Uint8Array) {
+    this.hashFunction = hashFunction;
+    this.layers = this.createTree(leafHashes);
+  }
 
-            // Adding this layer to the tree
-            tree.push(parentLayer);
-            // Setting the next layer
-            currentLayer = parentLayer;
+  // Public methods
 
-            // Preparing the space for the next layer
-            parentLayer = [];
-        }
+  getRoot(): Uint8Array {
+    return this.layers[this.layers.length - 1][0];
+  }
 
-        return tree;
-    }
+  /**
+   * Returns tree depth. Tree depth is needed for the proof verification
+   *
+   * @return {number}
+   */
+  getDepth(): number {
+    return this.layers.length - 1;
+  }
 
-    /**
-     *
-     * @param {Uint8Array[]} leafHashes
-     * @param {function(data: Uint8Array): Uint8Array} hashFunction
-     */
-    constructor(leafHashes: Uint8Array[], hashFunction: (i: Uint8Array) => Uint8Array) {
-        this.hashFunction = hashFunction;
-        this.layeredTree = this.createTree(leafHashes);
-    }
+  /**
+   *  Returns merkle proof for the given leaf indices
+   *
+   * @param {number[]} leafIndices
+   * @return {MerkleProof}
+   */
+  getProof(leafIndices: number[]): MerkleProof {
+    // Proof consists of all siblings hashes that aren't in the set we're trying to prove
+    // 1. Get all sibling indices. Those are the indices we need to get to the root
+    // 2. Filter all nodes that doesn't require an additional hash
+    // 3. Get all hashes for indices from step 2
+    // 4. Remove empty spaces (the leftmost nodes that do not have anything to the right)7
+    const { proofHashes: proof } = this.layers.reduce((
+      { currentLayerIndices, proofHashes }: ProofAccumulator, treeLayer,
+    ) => ({
+      currentLayerIndices: getParentIndices(currentLayerIndices),
+      proofHashes: [
+        ...proofHashes,
+        ...currentLayerIndices
+          .map(getSiblingIndex)
+          .filter((siblingIndex) => !currentLayerIndices.includes(siblingIndex))
+          .map((index) => treeLayer[index])
+          .filter((proofHash) => !!proofHash)],
+    }),
+    {
+      currentLayerIndices: leafIndices,
+      proofHashes: [],
+    });
 
-    // Public methods
+    return new MerkleProof(proof, this.hashFunction);
+  }
 
-    getRoot(): Uint8Array {
-        return this.layeredTree[this.layeredTree.length - 1][0];
-    }
-
-    /**
-     * Returns tree depth. Tree depth is needed for the proof verification
-     *
-     * @return {number}
-     */
-    getDepth(): number {
-        return this.layeredTree.length - 1;
-    }
-    /**
-     *  Returns merkle proof for the given leaf indices
-     *
-     * @param {number[]} leafIndices
-     * @return {MerkleProof}
-     */
-    getProof(leafIndices: number[]): MerkleProof {
-        // 1. Get neighboring nodes to the ones we're trying to prove
-        // 2. Figure out if we already have them among indices
-        // 3. Add neighboring nodes to the proof
-        // 4. Repeat until we got to the root
-
-        const proofLayers = [];
-
-        let currentLayerIndices = leafIndices;
-        for (let treeLayer of this.layeredTree) {
-            let siblingIndices = currentLayerIndices.map(getSiblingIndex);
-
-            // Filtering siblings that are amongst the requested indices already
-            const filteredSiblings = siblingIndices.filter(siblingIndex => {
-                return !currentLayerIndices.includes(siblingIndex);
-            });
-
-            const parentIndices = getParentIndices(currentLayerIndices);
-            // We need to filter out nodes that do not have a sibling
-            const currentLayerProofHashes = filteredSiblings
-                .map(index =>  treeLayer[index])
-                .filter(proofHash => !!proofHash)
-
-            proofLayers.push(currentLayerProofHashes);
-            currentLayerIndices = parentIndices;
-        }
-
-        return new MerkleProof(Array.prototype.concat(...proofLayers), this.hashFunction);
-    }
-
-    getLayers() {
-        return this.layeredTree;
-    }
+  getLayers(): Uint8Array[][] {
+    return this.layers;
+  }
 }

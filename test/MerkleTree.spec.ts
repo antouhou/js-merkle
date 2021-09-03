@@ -1,112 +1,92 @@
-import { MerkleTree } from "../src";
-import crypto from "crypto";
-import { expect } from "chai";
+import crypto from 'crypto';
+import { expect, use } from 'chai';
+import dirtyChai from 'dirty-chai';
+import { MerkleTree } from '../src';
+
+use(dirtyChai);
 
 function sha256(data: Uint8Array): Uint8Array {
-    return crypto
-        .createHash('sha256')
-        .update(data)
-        .digest();
+  return crypto
+    .createHash('sha256')
+    .update(data)
+    .digest();
 }
 
-class MerkleProofTestCase {
-    leafHashes: Uint8Array[];
-    leafIndicesToProve: number[];
-    leafHashesToProve: Uint8Array[];
-    expectedRoot: Uint8Array;
-    title: string;
+describe('MerkleTree', () => {
+  let leafValues: string[];
+  let leafHashes: Uint8Array[];
+  let expectedRootHex: string;
 
-    constructor(leafHashes: Uint8Array[], leafIndicesToProve: number[], expectedRoot: Uint8Array) {
-        const titlePrefix = 'should get a correct root'
+  beforeEach(() => {
+    leafValues = ['a', 'b', 'c', 'd', 'e', 'f'];
+    leafHashes = leafValues.map((x) => sha256(Buffer.from(x)));
 
-        this.leafHashes = leafHashes;
-        this.leafIndicesToProve = leafIndicesToProve;
-        this.leafHashesToProve = this.leafIndicesToProve.map((index) => this.leafHashes[index]);
+    expectedRootHex = '1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2';
+  });
 
-        this.expectedRoot = expectedRoot;
+  describe('#getRoot', () => {
+    it('should get a correct root', () => {
+      const merkleTree = new MerkleTree(leafHashes, sha256);
 
-        const isBalancedTree = leafHashes.length % 2 === 0;
-        this.title = `${titlePrefix} from a ${isBalancedTree ? 'balanced' : 'unbalanced'} tree for ${leafIndicesToProve.length} elements`;
+      const hexRoot = Buffer.from(merkleTree.getRoot()).toString('hex');
 
-    }
+      expect(hexRoot).to.be.equal(expectedRootHex);
+    });
+  });
 
-}
+  describe('#getProof', () => {
+    it('should get a correct proof', () => {
+      // The first layer should be siblings of leaves 3 and 4, which are leaves 2 and 5
+      // Since there are 6 leaves, the second layer consists of 3 nodes, 2 of which we
+      // can now figure out from the first layer:
+      // (node1 = hash(leaf2 + leaf3), node2 = hash(leaf4 + leaf 5)). So from the
+      // second layer we need node0, and nothing from the top layer - 2 hashes from
+      // there we will be able to calculate from the information we have.
+      const expectedProofHashes = [
+        '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+        '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
+        'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
+      ];
 
-describe("MerkleTree", () => {
-    let leafValues: string[];
-    let leafHashes: Uint8Array[];
-    let expectedRootHex: string;
+      const leafIndicesToProve = [3, 4];
+      // const leafHashesToProve = leafIndicesToProve.map(leafIndex => leafHashes[leafIndex]);
 
-    beforeEach(() => {
-        leafValues = ['a', 'b', 'c', 'd', 'e', 'f'];
-        leafHashes = leafValues.map((x) => sha256(Buffer.from(x)));
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+      const merkleProof = merkleTree.getProof(leafIndicesToProve);
 
-        expectedRootHex = '1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2';
+      const hexLayers = merkleProof
+        .getProofHashes()
+        .map((node) => Buffer.from(node).toString('hex'));
+
+      expect(hexLayers).to.be.deep.equal(expectedProofHashes);
     });
 
-    describe('#getRoot', () => {
-        it('should get a correct root', () => {
-            const merkleTree = new MerkleTree(leafHashes, sha256);
+    it('should get correct proof leaves 1 and 3', () => {
+      const expectedProofHashes = [
+        'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
+        '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+        '04fa33f8b4bd3db545fa04cdd51b462509f611797c7bfe5c944ee2bb3b2ed908',
+      ];
 
-            const hexRoot = Buffer.from(merkleTree.getRoot()).toString('hex');
+      const leafIndicesToProve = [1, 3];
 
-            expect(hexRoot).to.be.equal(expectedRootHex);
-        })
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+      const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+      const hexLayers = merkleProof
+        .getProofHashes()
+        .map((node) => Buffer.from(node).toString('hex'));
+
+      expect(hexLayers).to.be.deep.equal(expectedProofHashes);
     });
+  });
 
-    describe('#getProof', () => {
-        it('should get a correct proof', () => {
-            // The first layer should be siblings of leaves 3 and 4, which are leaves 2 and 5
-            // Since there are 6 leaves, the second layer consists of 3 nodes, 2 of which we
-            // can now figure out from the first layer:
-            // (node1 = hash(leaf2 + leaf3), node2 = hash(leaf4 + leaf 5)). So from the
-            // second layer we need node0, and nothing from the top layer - 2 hashes from
-            // there we will be able to calculate from the information we have.
-            const expectedProofHashes = [
-                '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
-                '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
-                'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a'
-            ];
+  describe('#getTreeDepth', () => {
+    it('should return a correct tree depth', () => {
+      // 6 leaves - 3 layers deep tree. Tree depth generally can be figure out
+      const merkleTree = new MerkleTree(leafHashes, sha256);
 
-            const leafIndicesToProve = [3, 4];
-            // const leafHashesToProve = leafIndicesToProve.map(leafIndex => leafHashes[leafIndex]);
-
-            const merkleTree = new MerkleTree(leafHashes, sha256);
-            const merkleProof = merkleTree.getProof(leafIndicesToProve);
-
-            const hexLayers = merkleProof
-                .getProofHashes()
-                .map(node => Buffer.from(node).toString('hex'));
-
-            expect(hexLayers).to.be.deep.equal(expectedProofHashes);
-        });
-
-        it ('should get correct proof leaves 1 and 3', () => {
-            const expectedProofHashes = [
-                'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
-                '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
-                '04fa33f8b4bd3db545fa04cdd51b462509f611797c7bfe5c944ee2bb3b2ed908'
-            ];
-
-            const leafIndicesToProve = [1, 3];
-
-            const merkleTree = new MerkleTree(leafHashes, sha256);
-            const merkleProof = merkleTree.getProof(leafIndicesToProve);
-
-            const hexLayers = merkleProof
-                .getProofHashes()
-                .map(node => Buffer.from(node).toString('hex'));
-
-            expect(hexLayers).to.be.deep.equal(expectedProofHashes);
-        });
+      expect(merkleTree.getDepth()).to.be.equal(3);
     });
-
-    describe('#getTreeDepth', () => {
-        it('should return a correct tree depth', () => {
-            // 6 leaves - 3 layers deep tree. Tree depth generally can be figure out
-            const merkleTree = new MerkleTree(leafHashes, sha256);
-
-            expect(merkleTree.getDepth()).to.be.equal(3);
-        });
-    });
+  });
 });

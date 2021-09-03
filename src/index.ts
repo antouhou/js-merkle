@@ -1,2 +1,2 @@
-export { MerkleTree } from "./MerkleTree";
-export { MerkleProof } from "./MerkleProof";
+export { default as MerkleTree } from './MerkleTree';
+export { default as MerkleProof } from './MerkleProof';
