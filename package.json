@@ -1,6 +1,6 @@
 {
   "name": "merkle-proof",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Library for building merkle trees and verifying merkle proofs, including multi proofs. Built to be easy to understand",
   "main": "dist/index.js",
   "directories": {
