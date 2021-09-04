@@ -14,8 +14,8 @@ jobs:
         with:
           node-version: 14
       - run: npm ci
-      - run: npm build
-      - run: npm cover
+      - run: npm run build
+      - run: npm run cover
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
