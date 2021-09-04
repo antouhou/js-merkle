@@ -1,5 +1,5 @@
 {
-  "name": "merkle-proof",
+  "name": "js-merkle",
   "version": "0.1.0",
   "description": "Library for building merkle trees and verifying merkle proofs, including multi proofs. Built to be easy to understand",
   "main": "dist/src/index.js",
