@@ -1,8 +1,8 @@
 import { difference, range } from './array';
 
-export type layerInfo = {
+export interface LayerInfo {
+  index: number;
   leavesCount: number;
-  layerIndex: number;
 }
 
 export function isLeftIndex(index: number): boolean {
@@ -38,19 +38,19 @@ export function maxLeavesCountAtDepth(depth: number): number {
   return 2 ** depth;
 }
 
-export function getUnevenLayers(treeLeavesCount: number): layerInfo[] {
-  let leavesCountOnTheLayer = treeLeavesCount;
+export function getUnevenLayers(treeLeavesCount: number): LayerInfo[] {
+  let leavesCount = treeLeavesCount;
   const depth = getTreeDepth(treeLeavesCount);
 
   const unevenLayers = [];
 
-  for (let i = 0; i < depth; i++) {
-    const unevenLayer = leavesCountOnTheLayer % 2 !== 0;
+  for (let index = 0; index < depth; index++) {
+    const unevenLayer = leavesCount % 2 !== 0;
     if (unevenLayer) {
-      unevenLayers.push({ leavesCount: leavesCountOnTheLayer, layerIndex: i });
+      unevenLayers.push({ index, leavesCount });
     }
 
-    leavesCountOnTheLayer = Math.ceil(leavesCountOnTheLayer / 2);
+    leavesCount = Math.ceil(leavesCount / 2);
   }
 
   return unevenLayers;
@@ -61,20 +61,21 @@ export function getProofIndices(sortedLeafIndices: number[], leavesCount: number
   const unevenLayers = getUnevenLayers(leavesCount);
   const proofIndices: number[][] = [];
 
-  range(0, depth).reduce((currentLayerIndices, layerIndex) => {
-    const currentLayerSiblingIndices = currentLayerIndices.map(getSiblingIndex);
+  range(0, depth).reduce((layerNodes, layerIndex) => {
+    const siblingIndices = layerNodes.map(getSiblingIndex);
     // Figuring out indices that are already siblings and do not require additional hash
     // to calculate the parent
-    let proofNodesIndices = difference(currentLayerSiblingIndices, currentLayerIndices);
+    let proofNodesIndices = difference(siblingIndices, layerNodes);
 
     // The last node of that layer doesn't have another hash to the right, so doesn't
-    const unevenLayer = unevenLayers.find((layer) => layer.layerIndex === layerIndex);
-    if (unevenLayer && currentLayerIndices.includes(unevenLayer.leavesCount - 1)) {
+    const unevenLayer = unevenLayers.find(({ index }) => index === layerIndex);
+    if (unevenLayer && layerNodes.includes(unevenLayer.leavesCount - 1)) {
       proofNodesIndices = proofNodesIndices.slice(0, -1);
     }
 
     proofIndices.push(proofNodesIndices);
-    return getParentIndices(currentLayerIndices);
+    // Passing parent nodes indices to the next iteration cycle
+    return getParentIndices(layerNodes);
   }, sortedLeafIndices);
 
   return proofIndices;
