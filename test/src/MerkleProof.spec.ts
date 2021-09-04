@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { expect, use } from 'chai';
 import dirtyChai from 'dirty-chai';
-import { MerkleTree, MerkleProof } from '../src';
-import { createCombinations } from '../src/utils/array';
+import { MerkleTree, MerkleProof } from '../../src';
+import { createCombinations } from '../../src/utils/array';
 
 use(dirtyChai);
 
@@ -31,8 +31,7 @@ class MerkleProofTestCase {
 
       this.expectedRoot = expectedRoot;
 
-      const isBalancedTree = leafHashes.length % 2 === 0;
-      this.title = `from a ${isBalancedTree ? 'balanced' : 'unbalanced'} tree of ${leafHashes.length} elements for ${leafIndicesToProve.length} elements at positions ${leafIndicesToProve}`;
+      this.title = `from a tree of ${leafHashes.length} elements for ${leafIndicesToProve.length} elements at positions ${leafIndicesToProve}`;
     }
 }
 

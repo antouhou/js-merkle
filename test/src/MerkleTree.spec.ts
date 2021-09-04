@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { expect, use } from 'chai';
 import dirtyChai from 'dirty-chai';
-import { MerkleTree } from '../src';
+import { MerkleTree } from '../../src';
 
 use(dirtyChai);
 

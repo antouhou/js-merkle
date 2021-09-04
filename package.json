@@ -2,14 +2,20 @@
   "name": "merkle-proof",
   "version": "0.1.0",
   "description": "Library for building merkle trees and verifying merkle proofs, including multi proofs. Built to be easy to understand",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/src"
+  ],
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "npm run build && mocha ./dist/test/**.spec.js -b",
-    "build": "tsc",
-    "lint": "eslint ."
+    "test": "npm run build && mocha 'dist/test/**/*.spec.js'",
+    "clean": "rm -rf dist",
+    "build": "npm run clean && tsc",
+    "lint": "eslint .",
+    "cover": "nyc --reporter=lcov mocha --require ts-node/register 'test/**/*.spec.ts'"
   },
   "repository": {
     "type": "git",
@@ -43,6 +49,8 @@
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.24.2",
     "mocha": "^9.1.1",
+    "nyc": "^15.1.0",
+    "ts-node": "^10.2.1",
     "typescript": "^4.4.2"
   }
 }
