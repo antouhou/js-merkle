@@ -54,6 +54,41 @@ Change the .verify line in the verification example to:
 const extractedRoot = proof.calculateRoot(leafsIndiciesToVerify, [leafs[1], leafs[3]], leavesCount);
 ```
 
+### Serializing the proof:
+```javascript
+import { MerkleTree, MerkleProof } from 'js-merkle';
+
+const leafValues = ['a', 'b', 'c', 'd', 'e', 'f'];
+const leafs = leafValues.map((x) => sha256(Buffer.from(x)));
+const merkleTree = new MerkleTree(leafHashes, sha256);
+const root = merkleTree.getRoot();
+
+const proof = new MerkleProof(proofHashes, sha256);
+// To buffer, for node.js or if you have a buffer polyfill in your app:
+const proofBuffer = proof.toBuffer();
+// To Uint8Array, if you plan to use the lib in the browser:
+const proofArray = proof.toBytes();
+```
+
+### Parsing a serialized proof:
+```javascript
+import { MerkleTree, MerkleProof } from 'js-merkle';
+
+const leafValues = ['a', 'b', 'c', 'd', 'e', 'f'];
+const leafs = leafValues.map((x) => sha256(Buffer.from(x)));
+const merkleTree = new MerkleTree(leafHashes, sha256);
+const root = merkleTree.getRoot();
+
+const proof = new MerkleProof(proofHashes, sha256);
+const proofBuffer = proof.toBuffer();
+const proofArray = proof.toBytes();
+
+// From a proof serialized to buffer:
+const restoredProofFromBuffer = MerkleProof.fromBuffer(proofBuffer, sha256);
+// From a proof serialized to a Uint8Array:
+const restoredProofFromBuffer = MerkleProof.fromBytes(proofArray, sha256);
+```
+
 ## Contributing
 
 Everyone is welcome to contribute in any way of form! For the further details, please read [CONTRIBUTING.md](./CONTRIBUTING.md)

@@ -151,7 +151,7 @@ describe('MerkleProof', () => {
 
   describe('#getProofHashes', () => {
     it('should return correct proof hashes', () => {
-      const expectedFlattenedProofHashes = [
+      const expectedProofHashes = [
         '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
         '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
         'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
@@ -165,7 +165,53 @@ describe('MerkleProof', () => {
         .getProofHashes()
         .map((node) => Buffer.from(node).toString('hex'));
 
-      expect(hexHashes).to.be.deep.equal(expectedFlattenedProofHashes);
+      expect(hexHashes).to.be.deep.equal(expectedProofHashes);
+    });
+  });
+
+  describe('fromBytes', () => {
+    it('should restore proof from bytes', () => {
+      const expectedFlattenedProofHashes = [
+        '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+        '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
+        'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
+      ];
+      const leafIndicesToProve = [3, 4];
+
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+      const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+      const bytes = merkleProof.toBytes();
+
+      const restoredProof = MerkleProof.fromBytes(bytes, sha256);
+      const restoredHashes = restoredProof
+        .getProofHashes()
+        .map((node) => Buffer.from(node).toString('hex'));
+
+      expect(restoredHashes).to.be.deep.equal(expectedFlattenedProofHashes);
+    });
+  });
+
+  describe('fromBuffer', () => {
+    it('should restore proof from bytes', () => {
+      const expectedFlattenedProofHashes = [
+        '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+        '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
+        'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
+      ];
+      const leafIndicesToProve = [3, 4];
+
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+      const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+      const buffer = merkleProof.toBuffer();
+
+      const restoredProof = MerkleProof.fromBuffer(buffer, sha256);
+      const restoredHashes = restoredProof
+        .getProofHashes()
+        .map((node) => Buffer.from(node).toString('hex'));
+
+      expect(restoredHashes).to.be.deep.equal(expectedFlattenedProofHashes);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { getProofIndices, getParentIndices } from './utils/indices';
-import { zip } from './utils/array';
+import { range, zip } from './utils/array';
 import concatAndHash from './utils/concatenateAndHash';
 
 export default class MerkleProof {
@@ -70,7 +70,7 @@ export default class MerkleProof {
    * @param {Uint8Array[]} leafHashes - leaf hashes to verify
    * @param {number} leavesCount - amount of leaves in the original tree
    *
-   * @return {boolean}
+   * @return boolean
    */
   verify(
     root: Uint8Array, leafIndices: number[], leafHashes: Uint8Array[], leavesCount: number,
@@ -78,5 +78,59 @@ export default class MerkleProof {
     const extractedRoot = this.calculateRoot(leafIndices, leafHashes, leavesCount);
     const rootHaveSameLength = root.length === extractedRoot.length;
     return rootHaveSameLength && extractedRoot.every((byte, index) => byte === root[index]);
+  }
+
+  /**
+   * Serializes proof to Uint8Array
+   *
+   * @return Uint8Array
+   */
+  toBytes(): Uint8Array {
+    return this
+      .getProofHashes()
+      .reduce(
+        (acc, curr) => new Uint8Array([...acc, ...curr]),
+        new Uint8Array(),
+      );
+  }
+
+  /**
+   * Creates an instance of MerkleProof from serialized proof
+   *
+   * @param {Uint8Array} bytes
+   * @param {function(data: Uint8Array): Uint8Array} hashFunction
+   * @param {number} [hashSize] - the size of one hash. Default is 32
+   * @return MerkleProof
+   */
+  static fromBytes(
+    bytes: Uint8Array, hashFunction: (i: Uint8Array) => Uint8Array, hashSize = 32,
+  ): MerkleProof {
+    const hashesCount = bytes.length / hashSize;
+    const hashes = range(0, hashesCount)
+      .map((i) => new Uint8Array(bytes.slice(i * hashSize, i * hashSize + hashSize)));
+    return new MerkleProof(hashes, hashFunction);
+  }
+
+  /**
+   * Serializes proof to buffer
+   *
+   * @return Buffer
+   */
+  toBuffer(): Buffer {
+    return Buffer.from(this.toBytes());
+  }
+
+  /**
+   * Creates an instance of MerkleProof from serialized proof
+   *
+   * @param {Buffer} buffer
+   * @param {function(data: Uint8Array): Uint8Array} hashFunction
+   * @param {number} [hashSize] - the size of one hash. Default is 32
+   * @return MerkleProof
+   */
+  static fromBuffer(
+    buffer: Buffer, hashFunction: (i: Uint8Array) => Uint8Array, hashSize = 32,
+  ): MerkleProof {
+    return this.fromBytes(buffer, hashFunction, hashSize);
   }
 }
