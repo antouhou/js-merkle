@@ -1,7 +1,7 @@
 import MerkleProof from './MerkleProof';
 import { getSiblingIndex, getParentIndices, getTreeDepth } from './utils/indices';
 import concatAndHash from './utils/concatenateAndHash';
-import { range } from './utils/array';
+import { range, uint8ArrayToHex } from './utils/array';
 
 interface ProofAccumulator {
   currentLayerIndices: number[],
@@ -91,5 +91,14 @@ export default class MerkleTree {
 
   getLayers(): Uint8Array[][] {
     return this.layers;
+  }
+
+  /**
+   * Get tree layers as an array of hex hashes
+   *
+   * @return {string[][]}
+   */
+  getHexLayers(): string[][] {
+    return this.getLayers().map((layer) => layer.map(uint8ArrayToHex));
   }
 }

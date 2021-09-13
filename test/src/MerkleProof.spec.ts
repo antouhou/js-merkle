@@ -214,4 +214,26 @@ describe('MerkleProof', () => {
       expect(restoredHashes).to.be.deep.equal(expectedFlattenedProofHashes);
     });
   });
+
+  describe('#getHexProofHashes', () => {
+    it('should return proof hashes serialized to hex strings', () => {
+      const expectedFlattenedProofHashes = [
+        '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+        '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
+        'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
+      ];
+      const leafIndicesToProve = [3, 4];
+
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+      const merkleProof = merkleTree.getProof(leafIndicesToProve);
+
+      const buffer = merkleProof.toBuffer();
+
+      const restoredProof = MerkleProof.fromBuffer(buffer, sha256);
+      const restoredHashes = restoredProof
+        .getHexProofHashes();
+
+      expect(restoredHashes).to.be.deep.equal(expectedFlattenedProofHashes);
+    });
+  });
 });

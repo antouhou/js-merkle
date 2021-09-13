@@ -33,3 +33,7 @@ export function range(start: number, end: number): number[] {
 export function difference<T>(a: T[], b: T[]): T[] {
   return a.filter((siblingIndex) => !b.includes(siblingIndex));
 }
+
+export function uint8ArrayToHex(arr: Uint8Array): string {
+  return Array.from(arr).map((byte) => (`0${byte.toString(16)}`).slice(-2)).join('');
+}

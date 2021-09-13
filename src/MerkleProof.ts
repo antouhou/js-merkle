@@ -1,5 +1,5 @@
 import { getProofIndices, getParentIndices } from './utils/indices';
-import { range, zip } from './utils/array';
+import { range, uint8ArrayToHex, zip } from './utils/array';
 import concatAndHash from './utils/concatenateAndHash';
 
 export default class MerkleProof {
@@ -19,6 +19,15 @@ export default class MerkleProof {
    */
   getProofHashes(): Uint8Array[] {
     return this.proofHashes;
+  }
+
+  /**
+   * Get proof hashes as an array of hex strings
+   *
+   * @return {string[]}
+   */
+  getHexProofHashes(): string[] {
+    return this.getProofHashes().map(uint8ArrayToHex);
   }
 
   /**

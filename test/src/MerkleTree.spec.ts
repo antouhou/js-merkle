@@ -89,4 +89,33 @@ describe('MerkleTree', () => {
       expect(merkleTree.getDepth()).to.be.equal(3);
     });
   });
+
+  describe('#getHexLayers', () => {
+    it('should return all tree nodes converted to hex strings', () => {
+      const merkleTree = new MerkleTree(leafHashes, sha256);
+
+      expect(merkleTree.getHexLayers()).to.be.deep.equal([
+        [
+          'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb',
+          '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d',
+          '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6',
+          '18ac3e7343f016890c510e93f935261169d9e3f565436429830faf0934f4f8e4',
+          '3f79bb7b435b05321651daefd374cdc681dc06faa65e374e38337b88ca046dea',
+          '252f10c83610ebca1a059c0bae8255eba2f95be4d1d7bcfa89d7248a82d9f111',
+        ],
+        [
+          'e5a01fee14e0ed5c48714f22180f25ad8365b53f9779f79dc4a3d7e93963f94a',
+          'bffe0b34dba16bc6fac17c08bac55d676cded5a4ade41fe2c9924a5dde8f3e5b',
+          '04fa33f8b4bd3db545fa04cdd51b462509f611797c7bfe5c944ee2bb3b2ed908',
+        ],
+        [
+          '14ede5e8e97ad9372327728f5099b95604a39593cac3bd38a343ad76205213e7',
+          '04fa33f8b4bd3db545fa04cdd51b462509f611797c7bfe5c944ee2bb3b2ed908',
+        ],
+        [
+          '1f7379539707bcaea00564168d1d4d626b09b73f8a2a365234c62d763f854da2',
+        ],
+      ]);
+    });
+  });
 });
